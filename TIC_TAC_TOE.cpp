@@ -196,7 +196,10 @@ public:
 
 int main() {
     cout << "Welcome to Tic-Tac-Toe!\n";
-    cout << "Enter 1 for single player (against computer), 2 for two players: ";
+    cout << "Select Gamemode: \n";
+    cout << "Single Player (1) \n";
+    cout << "Two Players (2) \n";
+    cout << "Enter your choice: ";
     int choice;
     cin >> choice;
     bool singlePlayer = (choice == 1);
