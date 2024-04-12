@@ -1,4 +1,5 @@
-// TIC_TAC_TOE //
+// TIC Tac Toe //
+
 
 #include <iostream>
 #include <vector>
@@ -14,15 +15,24 @@ private:
     vector<vector<Player>> board;
     Player currentPlayer;
     bool singlePlayer;
+    int boardSize;
 
 public:
-    TicTacToe(bool singlePlayerMode) : board(3, vector<Player>(3, Player::EMPTY)), currentPlayer(Player::X), singlePlayer(singlePlayerMode) {}
+    TicTacToe(bool singlePlayerMode) : currentPlayer(Player::X), singlePlayer(singlePlayerMode), boardSize(3) {
+        // Initialize the board with the initial size (3x3)
+        board = vector<vector<Player>>(boardSize, vector<Player>(boardSize, Player::EMPTY));
+    }
 
     void printBoard() {
-        cout << "  1 2 3\n";
-        for (int i = 0; i < 3; ++i) {
+        cout << " ";
+        for (int i = 0; i < boardSize; ++i) {
+            cout << " " << i + 1;
+        }
+        cout << endl;
+
+        for (int i = 0; i < boardSize; ++i) {
             cout << i + 1 << " ";
-            for (int j = 0; j < 3; ++j) {
+            for (int j = 0; j < boardSize; ++j) {
                 switch (board[i][j]) {
                 case Player::EMPTY:
                     cout << "_ ";
@@ -40,7 +50,7 @@ public:
     }
 
     bool makeMove(int row, int col) {
-        if (row < 0 || row >= 3 || col < 0 || col >= 3 || board[row][col] != Player::EMPTY) {
+        if (row < 0 || row >= boardSize || col < 0 || col >= boardSize || board[row][col] != Player::EMPTY) {
             cout << "Invalid move! Try again.\n";
             return false;
         }
@@ -48,25 +58,72 @@ public:
         return true;
     }
 
-    bool checkWin() {
-        // Check rows and columns
-        for (int i = 0; i < 3; ++i) {
-            if (board[i][0] != Player::EMPTY && board[i][0] == board[i][1] && board[i][1] == board[i][2])
-                return true; // row win
-            if (board[0][i] != Player::EMPTY && board[0][i] == board[1][i] && board[1][i] == board[2][i])
-                return true; // column win
+    // Function to count consecutive symbols in a specified row
+    int countSymbolsInRow(int row, Player symbol) const {
+        int count = 0;
+        for (int col = 0; col < boardSize; ++col) {
+            if (board[row][col] == symbol) {
+                count++;
+            }
         }
+        return count;
+    }
+
+    // Function to count consecutive symbols in a specified column
+    int countSymbolsInCol(int col, Player symbol) const {
+        int count = 0;
+        for (int row = 0; row < boardSize; ++row) {
+            if (board[row][col] == symbol) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Function to count consecutive symbols in the main diagonal
+    int countSymbolsInMainDiagonal(Player symbol) const {
+        int count = 0;
+        for (int i = 0; i < boardSize; ++i) {
+            if (board[i][i] == symbol) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Function to count consecutive symbols in the anti-diagonal
+    int countSymbolsInAntiDiagonal(Player symbol) const {
+        int count = 0;
+        for (int i = 0; i < boardSize; ++i) {
+            if (board[i][boardSize - 1 - i] == symbol) {
+                count++;
+            }
+        }
+        return count;
+    }
+
+    // Function to check if a player has won (i.e., has enough consecutive symbols in a line)
+    bool checkWin(Player player) const {
+        Player symbol = (player == Player::X) ? Player::X : Player::O;
+
+        // Check rows and columns
+        for (int i = 0; i < boardSize; ++i) {
+            if (countSymbolsInRow(i, symbol) == boardSize || countSymbolsInCol(i, symbol) == boardSize) {
+                return true;
+            }
+        }
+
         // Check diagonals
-        if (board[0][0] != Player::EMPTY && board[0][0] == board[1][1] && board[1][1] == board[2][2])
-            return true; // diagonal win
-        if (board[0][2] != Player::EMPTY && board[0][2] == board[1][1] && board[1][1] == board[2][0])
-            return true; // diagonal win
+        if (countSymbolsInMainDiagonal(symbol) == boardSize || countSymbolsInAntiDiagonal(symbol) == boardSize) {
+            return true;
+        }
+
         return false;
     }
 
     bool boardFull() {
-        for (int i = 0; i < 3; ++i) {
-            for (int j = 0; j < 3; ++j) {
+        for (int i = 0; i < boardSize; ++i) {
+            for (int j = 0; j < boardSize; ++j) {
                 if (board[i][j] == Player::EMPTY)
                     return false;
             }
@@ -78,37 +135,50 @@ public:
         currentPlayer = (currentPlayer == Player::X) ? Player::O : Player::X;
     }
 
+    void resetBoard() {
+        boardSize = boardSize + 1; // Increase board size for the next game
+        board = vector<vector<Player>>(boardSize, vector<Player>(boardSize, Player::EMPTY));
+    }
+
     void play() {
-        while (!checkWin() && !boardFull()) {
-            printBoard();
-            int row, col;
-            cout << "Player " << (currentPlayer == Player::X ? 'X' : 'O') << ", enter your move (row col): ";
-            cin >> row >> col;
-            row--; col--; // Adjust for zero-based indexing
-            while (!makeMove(row, col)) {
+        bool playAgain = true;
+        while (playAgain) {
+            while (!checkWin(currentPlayer) && !boardFull()) {
+                printBoard();
+                int row, col;
                 cout << "Player " << (currentPlayer == Player::X ? 'X' : 'O') << ", enter your move (row col): ";
                 cin >> row >> col;
-                row--; col--; // for zero-based indexing
-            }
-            if (checkWin()) {
-                printBoard();
-                cout << "Player " << (currentPlayer == Player::X ? 'X' : 'O') << " wins!\n";
-                break;
-            }
-            if (boardFull()) {
-                printBoard();
-                cout << "It's a draw!\n";
-                break;
-            }
-            switchPlayer();
-            if (singlePlayer && currentPlayer == Player::O) {
-                makeComputerMove();
-                if (checkWin()) {
+                row--; col--; // Adjust for zero-based indexing
+                while (!makeMove(row, col)) {
+                    cout << "Invalid move! Player " << (currentPlayer == Player::X ? 'X' : 'O') << ", enter your move (row col): ";
+                    cin >> row >> col;
+                    row--; col--; // Adjust for zero-based indexing
+                }
+                if (checkWin(currentPlayer)) {
                     printBoard();
-                    cout << "Computer wins!\n";
+                    cout << "Player " << (currentPlayer == Player::X ? 'X' : 'O') << " wins!\n";
+                    break;
+                }
+                if (boardFull()) {
+                    printBoard();
+                    cout << "It's a draw!\n";
                     break;
                 }
                 switchPlayer();
+                if (singlePlayer && currentPlayer == Player::O) {
+                    makeComputerMove();
+                    if (checkWin(currentPlayer)) {
+                        printBoard();
+                        cout << "Computer wins!\n";
+                        break;
+                    }
+                    switchPlayer();
+                }
+            }
+            cout << "Do you want to play again? (1: Yes, 0: No): ";
+            cin >> playAgain;
+            if (playAgain) {
+                resetBoard();
             }
         }
     }
@@ -118,8 +188,8 @@ public:
         srand(time(0));
         int row, col;
         do {
-            row = rand() % 3;
-            col = rand() % 3;
+            row = rand() % boardSize;
+            col = rand() % boardSize;
         } while (!makeMove(row, col));
     }
 };
@@ -130,8 +200,9 @@ int main() {
     int choice;
     cin >> choice;
     bool singlePlayer = (choice == 1);
+
     TicTacToe game(singlePlayer);
     game.play();
+
     return 0;
 }
-
